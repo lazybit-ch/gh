@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DOCKER_REGISTRY: lazybit.ch
+  GITHUB_CLI_VERSION: 0.6.1
+  IMAGE_NAME: gh
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: lint Dockerfile
+        run: |
+          docker run --rm -i hadolint/hadolint < Dockerfile
+
+  build:
+    name: build
+    needs: lint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: build docker image
+        run: docker build --rm --pull -t "$DOCKER_REGISTRY/$IMAGE_NAME:v$GITHUB_CLI_VERSION" .
+
+      - name: lazybit.ch docker registry login
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login "$DOCKER_REGISTRY" -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: github packages registry login
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u "${{ github.actor }}" --password-stdin
+
+      - name: tag and push docker images
+        run: |
+          docker tag $DOCKER_REGISTRY/$IMAGE_NAME:v$GITHUB_CLI_VERSION docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME:v$GITHUB_CLI_VERSION
+
+          docker push $DOCKER_REGISTRY/$IMAGE_NAME:v$GITHUB_CLI_VERSION
+
+          docker push docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME:v$GITHUB_CLI_VERSION
+
+  release:
+    name: release
+    needs: build
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@master
+
+      - name: create github release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: ""
+          draft: false
+          prerelease: false
