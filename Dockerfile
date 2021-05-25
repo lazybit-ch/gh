@@ -12,6 +12,7 @@ RUN apt-get update && \
         ca-certificates=20210119~20.04.1 \
         git=1:2.25.1-1ubuntu3
 
+# hadolint ignore=DL3059
 RUN curl -L https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_amd64.tar.gz | tar xvz --strip-components 2 -C /usr/local/bin
 
 ENTRYPOINT ["/usr/local/bin/gh"]
