@@ -7,7 +7,7 @@ on:
 
 env:
   DOCKER_REGISTRY: lazybit.ch
-  GITHUB_CLI_VERSION: 0.11.1
+  GITHUB_CLI_VERSION: 1.10.3
   IMAGE_NAME: gh
 
 jobs:
