@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3009
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl=7.58.0-2ubuntu3.9 \
+        curl=7.68.0-1ubuntu2.7 \
         ca-certificates=20180409 \
         git=1:2.17.1-1ubuntu0.7
 
