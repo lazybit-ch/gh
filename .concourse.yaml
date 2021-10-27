@@ -1,0 +1,66 @@
+jobs:
+- name: build
+  plan:
+  - in_parallel:
+    - get: source
+      trigger: true
+    - get: version
+      trigger: true
+
+  - task: lint
+    config:
+      inputs:
+      - name: source
+        path: .
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hadolint/hadolint
+      run:
+        path: hadolint
+        args:
+        - Dockerfile
+        - -t
+        - warning
+
+  - put: out-docker-image
+    params:
+      build: source
+      cache: true
+      cache_tag: latest
+      dockerfile: source/Dockerfile
+      tag_file: version/number
+      tag_as_latest: true
+    get_params: {skip_download: true}
+
+resources:
+- name: version
+  source:
+    branch: master
+    password: x-oauth-basic
+    uri: https://github.com/yields-io/gh.git
+    username: ((git-token.username))
+  type: concourse-git-semver-tag
+
+- icon: github
+  name: source
+  source:
+    branch: master
+    password: x-oauth-basic
+    uri: https://github.com/yields-io/gh.git
+    username: ((git-token.username))
+  type: git
+
+- name: out-docker-image
+  type: docker-image
+  source:
+    username: ((docker.username))
+    password:  ((docker.password))
+    repository: build.yields.io/gh
+
+resource_types:
+- name: concourse-git-semver-tag
+  type: docker-image
+  source:
+    repository: laurentverbruggen/concourse-git-semver-tag-resource
