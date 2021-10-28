@@ -1,4 +1,40 @@
 jobs:
+- name: check-pull-request
+  plan:
+  - get: pull-request
+    trigger: true
+    version: every
+
+  - put: pull-request
+    params:
+      path: pull-request
+      status: PENDING
+
+  - task: lint
+    image: hadolint
+    config:
+      inputs:
+      - name: pull-request
+        path: .
+      platform: linux
+      run:
+        path: hadolint
+        args:
+        - Dockerfile
+        - -t
+        - warning
+
+    on_failure:
+      put: pull-request
+      params:
+        path: pull-request
+        status: FAILURE
+
+  - put: pull-request
+    params:
+      path: pull-request
+      status: SUCCESS
+
 - name: build-tag
   plan:
   - in_parallel:
@@ -116,8 +152,20 @@ resources:
     tag: 11-slim
   type: registry-image
 
+- name: pull-request
+  type: pull-request
+  source:
+    repository: yields-io/gh
+    access_token: ((git-token.username))
+
 resource_types:
 - name: concourse-git-semver-tag
   type: docker-image
   source:
     repository: laurentverbruggen/concourse-git-semver-tag-resource
+
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
