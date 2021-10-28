@@ -1,6 +1,7 @@
 jobs:
 - name: check-pull-request
   plan:
+  - get: hadolint
   - get: pull-request
     trigger: true
     version: every
